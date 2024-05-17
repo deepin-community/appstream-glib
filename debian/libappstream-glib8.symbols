@@ -599,6 +599,7 @@ libappstream-glib.so.8 libappstream-glib8 #MINVER#
  as_store_get_search_match@Base 0.6.13
  as_store_get_size@Base 0.5.1
  as_store_get_type@Base 0.5.1
+ as_store_get_version@Base 0.8.0
  as_store_get_watch_flags@Base 0.5.1
  as_store_load@Base 0.5.1
  as_store_load_async@Base 0.7.12
@@ -619,6 +620,7 @@ libappstream-glib.so.8 libappstream-glib8 #MINVER#
  as_store_set_destdir@Base 0.5.1
  as_store_set_origin@Base 0.5.1
  as_store_set_search_match@Base 0.6.5
+ as_store_set_version@Base 0.8.0
  as_store_set_watch_flags@Base 0.5.1
  as_store_to_file@Base 0.5.1
  as_store_to_xml@Base 0.5.1

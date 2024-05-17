@@ -163,8 +163,8 @@ as_test_monitor_dir_func (void)
 
 	tmpfile = g_build_filename (tmpdir, "test.txt", NULL);
 	tmpfile_new = g_build_filename (tmpdir, "newtest.txt", NULL);
-	g_unlink (tmpfile);
-	g_unlink (tmpfile_new);
+	(void)g_unlink (tmpfile);
+	(void)g_unlink (tmpfile_new);
 
 	mon = as_monitor_new ();
 	g_signal_connect (mon, "added",
@@ -180,7 +180,7 @@ as_test_monitor_dir_func (void)
 	g_assert (ret);
 
 	/* create directory */
-	g_mkdir_with_parents (tmpdir, 0700);
+	(void)g_mkdir_with_parents (tmpdir, 0700);
 
 	/* touch file */
 	cmd_touch = g_strdup_printf ("touch %s", tmpfile);
@@ -206,7 +206,7 @@ as_test_monitor_dir_func (void)
 
 	/* delete it */
 	cnt_added = cnt_removed = cnt_changed = 0;
-	g_unlink (tmpfile);
+	(void)g_unlink (tmpfile);
 	as_test_loop_run_with_timeout (2000);
 	as_test_loop_quit ();
 	g_assert_cmpint (cnt_added, ==, 0);
@@ -244,8 +244,8 @@ as_test_monitor_dir_func (void)
 	g_assert_cmpint (cnt_removed, ==, 1);
 	g_assert_cmpint (cnt_changed, ==, 0);
 
-	g_unlink (tmpfile);
-	g_unlink (tmpfile_new);
+	(void)g_unlink (tmpfile);
+	(void)g_unlink (tmpfile_new);
 }
 
 static void
@@ -261,8 +261,8 @@ as_test_monitor_file_func (void)
 	const gchar *tmpfile_new = "/tmp/two.txt";
 	g_autofree gchar *cmd_touch = NULL;
 
-	g_unlink (tmpfile);
-	g_unlink (tmpfile_new);
+	(void)g_unlink (tmpfile);
+	(void)g_unlink (tmpfile_new);
 
 	mon = as_monitor_new ();
 	g_signal_connect (mon, "added",
@@ -302,7 +302,7 @@ as_test_monitor_file_func (void)
 
 	/* delete it */
 	cnt_added = cnt_removed = cnt_changed = 0;
-	g_unlink (tmpfile);
+	(void)g_unlink (tmpfile);
 	as_test_loop_run_with_timeout (2000);
 	as_test_loop_quit ();
 	g_assert_cmpint (cnt_added, ==, 0);
@@ -533,7 +533,7 @@ as_test_release_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_release_node_insert (release, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -604,7 +604,7 @@ as_test_provide_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_provide_node_insert (provide, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -646,7 +646,7 @@ as_test_launchable_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_launchable_node_insert (launchable, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -737,7 +737,7 @@ as_test_release_appstream_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 1.0);
+	as_node_context_set_version (ctx, "1.0");
 	as_node_context_set_format_kind (ctx, AS_FORMAT_KIND_APPSTREAM);
 	n = as_release_node_insert (release, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_FORMAT_MULTILINE);
@@ -1021,7 +1021,7 @@ as_test_icon_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_icon_node_insert (icon, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	ret = as_test_compare_lines (xml->str, "<icon type=\"cached\" height=\"64\" width=\"64\">app.png</icon>", &error);
@@ -1084,7 +1084,7 @@ as_test_icon_scale_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.9);
+	as_node_context_set_version (ctx, "0.9");
 	n = as_icon_node_insert (icon, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1136,7 +1136,7 @@ as_test_checksum_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_checksum_node_insert (csum, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1230,7 +1230,7 @@ as_test_icon_embedded_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_icon_node_insert (icon, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1291,7 +1291,7 @@ as_test_image_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_image_node_insert (image, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1369,7 +1369,7 @@ as_test_agreement_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_agreement_node_insert (agreement, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_FORMAT_MULTILINE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1431,7 +1431,7 @@ as_test_review_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_review_node_insert (review, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_FORMAT_MULTILINE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1497,7 +1497,7 @@ as_test_require_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_app_node_insert (app, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_FORMAT_MULTILINE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1577,7 +1577,7 @@ as_test_suggest_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_suggest_node_insert (suggest, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_FORMAT_MULTILINE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1622,7 +1622,7 @@ as_test_bundle_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_bundle_node_insert (bundle, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1665,7 +1665,7 @@ as_test_translation_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_translation_node_insert (translation, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1728,7 +1728,7 @@ as_test_screenshot_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.8);
+	as_node_context_set_version (ctx, "0.8");
 	n = as_screenshot_node_insert (screenshot, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_FORMAT_MULTILINE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -1794,7 +1794,7 @@ as_test_content_rating_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.8);
+	as_node_context_set_version (ctx, "0.8");
 	n = as_content_rating_node_insert (content_rating, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_FORMAT_MULTILINE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -2120,7 +2120,7 @@ as_test_app_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 1.0);
+	as_node_context_set_version (ctx, "1.0");
 	n = as_app_node_insert (app, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_FORMAT_MULTILINE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -2395,7 +2395,11 @@ as_test_app_validate_file_bad_func (void)
 	as_test_app_validate_check (probs, AS_PROBLEM_KIND_TAG_INVALID,
 				    "<metadata_license> is not valid");
 	as_test_app_validate_check (probs, AS_PROBLEM_KIND_TAG_INVALID,
+				    "<metadata_license> was duplicated");
+	as_test_app_validate_check (probs, AS_PROBLEM_KIND_TAG_INVALID,
 				    "<project_license> is not valid");
+	as_test_app_validate_check (probs, AS_PROBLEM_KIND_TAG_INVALID,
+				    "<project_license> was duplicated");
 	as_test_app_validate_check (probs, AS_PROBLEM_KIND_TAG_INVALID,
 				    "<url> does not start with 'http://'");
 	as_test_app_validate_check (probs, AS_PROBLEM_KIND_MARKUP_INVALID,
@@ -2437,7 +2441,7 @@ as_test_app_validate_file_bad_func (void)
 				    "<launchable> has invalid type attribute");
 	as_test_app_validate_check (probs, AS_PROBLEM_KIND_VALUE_MISSING,
 				    "<launchable> missing value");
-	g_assert_cmpint (probs->len, ==, 23);
+	g_assert_cmpint (probs->len, ==, 25);
 
 	/* again, harder */
 	probs2 = as_app_validate (app, AS_APP_VALIDATE_FLAG_STRICT, &error);
@@ -2445,7 +2449,7 @@ as_test_app_validate_file_bad_func (void)
 	g_assert (probs2 != NULL);
 	as_test_app_validate_check (probs2, AS_PROBLEM_KIND_TAG_INVALID,
 				    "XML data contains unknown tag");
-	g_assert_cmpint (probs2->len, ==, 37);
+	g_assert_cmpint (probs2->len, ==, 39);
 }
 
 static void
@@ -2513,7 +2517,7 @@ as_test_store_local_appdata_func (void)
 
 	/* open test store */
 #ifdef _WIN32
-	g_setenv ("XDG_DATA_DIRS", "/usr/share/", TRUE);
+	(void)g_setenv ("XDG_DATA_DIRS", "/usr/share/", TRUE);
 #endif
 	store = as_store_new ();
 	filename = as_test_get_filename (".");
@@ -2746,7 +2750,7 @@ as_test_app_no_markup_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_app_node_insert (app, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_FORMAT_MULTILINE);
 	ret = as_test_compare_lines (xml->str, src, &error);
@@ -2861,6 +2865,20 @@ as_test_node_xml_func (void)
 			     "<!-- this documents bar -->"
 			     "<bar key=\"value\">baz</bar>"
 			     "</foo>";
+	const gchar *valid_em_code = "<description>"
+			     "<p>"
+			     "It now also supports <em>em</em> and <code>code</code> tags."
+			     "</p>"
+			     "</description>";
+	const gchar *valid_em_code_2 = "<description>"
+			     "<p><em>Emphasis</em> at the start of the paragraph</p>"
+			     "</description>";
+	const gchar *valid_em_code_empty = "<description>"
+			     "<p><em></em></p>"
+			     "</description>";
+	const gchar *valid_em_code_empty_2 = "<description>"
+			     "<p>empty <em></em> emphasis</p>"
+			     "</description>";
 	GError *error = NULL;
 	AsNode *n2;
 	AsNode *root;
@@ -2922,6 +2940,43 @@ as_test_node_xml_func (void)
 	g_assert (xml != NULL);
 	g_assert_cmpstr (xml->str, ==, "<p>One</p><p>Two</p>");
 	g_string_free (xml, TRUE);
+	as_node_unref (root);
+
+	/* support em and code tags */
+	root = as_node_from_xml (valid_em_code, 0, &error);
+	g_assert_no_error (error);
+	g_assert (root != NULL);
+
+	n2 = as_node_find (root, "description/p");
+	g_assert (n2 != NULL);
+	g_assert_cmpstr (as_node_get_data (n2), ==, "It now also supports <em>em</em> and <code>code</code> tags.");
+	as_node_unref (root);
+
+	root = as_node_from_xml (valid_em_code_2, 0, &error);
+	g_assert_no_error (error);
+	g_assert (root != NULL);
+
+	n2 = as_node_find (root, "description/p");
+	g_assert (n2 != NULL);
+	g_assert_cmpstr (as_node_get_data (n2), ==, "<em>Emphasis</em> at the start of the paragraph");
+	as_node_unref (root);
+
+	root = as_node_from_xml (valid_em_code_empty, 0, &error);
+	g_assert_no_error (error);
+	g_assert (root != NULL);
+
+	n2 = as_node_find (root, "description/p");
+	g_assert (n2 != NULL);
+	g_assert_cmpstr (as_node_get_data (n2), ==, NULL);
+	as_node_unref (root);
+
+	root = as_node_from_xml (valid_em_code_empty_2, 0, &error);
+	g_assert_no_error (error);
+	g_assert (root != NULL);
+
+	n2 = as_node_find (root, "description/p");
+	g_assert (n2 != NULL);
+	g_assert_cmpstr (as_node_get_data (n2), ==, "empty  emphasis");
 	as_node_unref (root);
 
 	/* keep comments */
@@ -3450,8 +3505,8 @@ as_test_store_auto_reload_dir_func (void)
 					   AS_STORE_WATCH_FLAG_REMOVED);
 
 	as_store_set_destdir (store, "/tmp/repo-tmp");
-	g_mkdir_with_parents ("/tmp/repo-tmp/usr/share/app-info/xmls", 0700);
-	g_unlink ("/tmp/repo-tmp/usr/share/app-info/xmls/foo.xml");
+	(void)g_mkdir_with_parents ("/tmp/repo-tmp/usr/share/app-info/xmls", 0700);
+	(void)g_unlink ("/tmp/repo-tmp/usr/share/app-info/xmls/foo.xml");
 
 	/* load store */
 	ret = as_store_load (store, AS_STORE_LOAD_FLAG_APP_INFO_SYSTEM, NULL, &error);
@@ -3482,7 +3537,7 @@ as_test_store_auto_reload_dir_func (void)
 	g_assert (app != NULL);
 
 	/* remove file */
-	g_unlink ("/tmp/repo-tmp/usr/share/app-info/xmls/foo.xml");
+	(void)g_unlink ("/tmp/repo-tmp/usr/share/app-info/xmls/foo.xml");
 	as_test_loop_run_with_timeout (2000);
 	g_assert_cmpint (cnt, ==, 3);
 	g_assert_cmpint (cnt_added, ==, 1);
@@ -3577,7 +3632,7 @@ as_test_store_auto_reload_file_func (void)
 	g_assert_cmpstr (as_release_get_version (rel), ==, "0.1.0");
 
 	/* remove file */
-	g_unlink ("/tmp/foo.xml");
+	(void)g_unlink ("/tmp/foo.xml");
 	as_test_loop_run_with_timeout (2000);
 	g_assert_cmpint (cnt, ==, 3);
 	app = as_store_get_app_by_id (store, "baz.desktop");
@@ -3678,7 +3733,7 @@ as_test_store_flatpak_func (void)
 	g_autoptr(GPtrArray) apps = NULL;
 
 	/* make throws us under a bus, yet again */
-	g_setenv ("AS_SELF_TEST_PREFIX_DELIM", "_", TRUE);
+	(void)g_setenv ("AS_SELF_TEST_PREFIX_DELIM", "_", TRUE);
 
 	/* load a symlinked file to the store */
 	store = as_store_new ();
@@ -3747,7 +3802,7 @@ as_test_store_demote_func (void)
 
 	/* add apps */
 	store = as_store_new ();
-	as_store_set_api_version (store, 0.8);
+	as_store_set_version (store, "0.8");
 	as_store_add_app (store, app_desktop);
 	as_store_add_app (store, app_appdata);
 
@@ -3930,7 +3985,7 @@ as_test_store_func (void)
 	g_assert_cmpstr (as_store_get_origin (store), ==, NULL);
 
 	/* check string output */
-	as_store_set_api_version (store, 0.6);
+	as_store_set_version (store, "0.6");
 	xml = as_store_to_xml (store, 0);
 	ret = as_test_compare_lines (xml->str,
 				     "<components version=\"0.6\">"
@@ -3952,7 +4007,7 @@ as_test_store_func (void)
 	as_store_remove_app (store, app);
 
 	/* check string output */
-	as_store_set_api_version (store, 0.6);
+	as_store_set_version (store, "0.6");
 	xml = as_store_to_xml (store, 0);
 	ret = as_test_compare_lines (xml->str,
 				     "<components version=\"0.6\">"
@@ -4139,7 +4194,7 @@ as_test_store_versions_func (void)
 	g_assert (as_app_get_format_by_kind (app, AS_FORMAT_KIND_APPSTREAM) != NULL);
 
 	/* test with latest features */
-	as_store_set_api_version (store, 0.6);
+	as_store_set_version (store, "0.6");
 	g_assert_cmpfloat (as_store_get_api_version (store), <, 0.6 + 0.01);
 	g_assert_cmpfloat (as_store_get_api_version (store), >, 0.6 - 0.01);
 	xml = as_store_to_xml (store, AS_NODE_TO_XML_FLAG_FORMAT_MULTILINE);
@@ -4187,6 +4242,26 @@ as_test_store_versions_func (void)
 	g_string_free (xml, TRUE);
 
 	g_object_unref (store);
+}
+
+static void
+as_test_store_invalid_func (void)
+{
+	gboolean ret;
+	g_autoptr(AsStore) store;
+	g_autoptr(GError) error = NULL;
+
+	/* load a file to the store */
+	store = as_store_new ();
+	ret = as_store_from_xml (store,
+		"<components version=\"0.6\">"
+		"<component type=\"desktop\">"
+		"<id>test.desktop</id>"
+		"<suggests><id/></suggests>"
+		"</component>"
+		"</components>", NULL, &error);
+	g_assert_no_error (error);
+	g_assert_true (ret);
 }
 
 static void
@@ -4283,7 +4358,7 @@ as_test_node_no_dup_c_func (void)
 
 	/* back to node */
 	root = as_node_new ();
-	as_node_context_set_version (ctx, 0.4);
+	as_node_context_set_version (ctx, "0.4");
 	n = as_app_node_insert (app, root, ctx);
 	xml = as_node_to_xml (n, AS_NODE_TO_XML_FLAG_NONE);
 	g_assert_cmpstr (xml->str, ==,
@@ -5851,6 +5926,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/AppStream/store{merges}", as_test_store_merges_func);
 	g_test_add_func ("/AppStream/store{merges-local}", as_test_store_merges_local_func);
 	g_test_add_func ("/AppStream/store{addons}", as_test_store_addons_func);
+	g_test_add_func ("/AppStream/store{invalid}", as_test_store_invalid_func);
 	g_test_add_func ("/AppStream/store{versions}", as_test_store_versions_func);
 	g_test_add_func ("/AppStream/store{origin}", as_test_store_origin_func);
 	g_test_add_func ("/AppStream/store{yaml}", as_test_store_yaml_func);

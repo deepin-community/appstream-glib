@@ -16,7 +16,7 @@ What this library allows you to do:
  * Efficiently interface with more heavy-weight parsers like expat
 
 For more information about what AppStream is, please see the wiki here:
-http://www.freedesktop.org/wiki/Distributions/AppStream/
+https://www.freedesktop.org/wiki/Distributions/AppStream/
 
 Getting Started
 ---------------
@@ -27,7 +27,7 @@ copy. To do the latter just do:
 
     dnf install docbook-utils gettext-devel glib-devel \
                 gobject-introspection-devel gperf gtk-doc gtk3-devel \
-                json-glib-devel libarchive-devel libsoup-devel \
+                json-glib-devel libarchive-devel libcurl-devel \
                 libstemmer-devel libuuid-devel libyaml-devel \
                 meson rpm-devel
     mkdir build && cd build
@@ -177,8 +177,8 @@ The current rules of inclusion are thus:
  * Application icon **MUST** be available in 48x48 or larger
  * Applications must have at least one main or additional category listed
    in the desktop file or supply an AppData file.
-   See http://standards.freedesktop.org/menu-spec/latest/apa.html and
-   http://standards.freedesktop.org/menu-spec/latest/apas02.html for the
+   See https://specifications.freedesktop.org/menu-spec/latest/apa.html and
+   https://specifications.freedesktop.org/menu-spec/latest/apas02.html for the
    full `Categories` list.
  * Codecs **MUST** have an AppData file
  * Input methods **MUST** have an AppData file

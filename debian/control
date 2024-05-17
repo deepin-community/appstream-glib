@@ -9,22 +9,23 @@ Build-Depends: debhelper-compat (= 12),
                gperf,
                gtk-doc-tools,
                libarchive-dev,
-               libgcab-dev (>= 0.6),
+               libcurl4-gnutls-dev | libcurl-dev (>= 7.62),
+               libgcab-dev,
                libgdk-pixbuf-2.0-dev | libgdk-pixbuf2.0-dev,
-               libgirepository1.0-dev (>= 1.53),
-               libglib2.0-dev (>= 2.58.0),
+               libgirepository1.0-dev,
+               libglib2.0-dev,
                libgtk-3-dev,
-               libjson-glib-dev (>= 1.1.2),
-               libsoup2.4-dev (>= 2.52),
+               libjson-glib-dev,
                libstemmer-dev,
                libyaml-dev,
-               meson (>= 0.40),
+               meson,
                uuid-dev,
                xmlto
 Build-Depends-Indep: appstream-doc <!nodoc>,
                      libgdk-pixbuf2.0-doc <!nodoc>,
                      libglib2.0-doc <!nodoc>
 Standards-Version: 4.6.0
+Rules-Requires-Root: no
 Homepage: https://github.com/hughsie/appstream-glib
 Vcs-Git: https://salsa.debian.org/pkgutopia-team/appstream-glib.git
 Vcs-Browser: https://salsa.debian.org/pkgutopia-team/appstream-glib
@@ -71,10 +72,10 @@ Section: libdevel
 Depends: gir1.2-appstreamglib-1.0 (= ${binary:Version}),
          libappstream-glib8 (= ${binary:Version}),
          libarchive-dev,
-         libgcab-dev (>= 0.6),
+         libgcab-dev,
          libgdk-pixbuf-2.0-dev | libgdk-pixbuf2.0-dev,
-         libglib2.0-dev (>= 2.58.0),
-         libsoup2.4-dev (>= 2.52),
+         libglib2.0-dev,
+         libsoup2.4-dev,
          libyaml-dev,
          uuid-dev,
          ${misc:Depends}
