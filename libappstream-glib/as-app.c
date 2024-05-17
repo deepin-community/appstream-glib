@@ -1453,7 +1453,7 @@ as_app_get_suggests (AsApp *app)
  * as_app_get_requires:
  * @app: a #AsApp instance.
  *
- * Gets any requires the application has defined. A rquirement could be that
+ * Gets any requires the application has defined. A requirement could be that
  * a firmware version has to be below a defined version or that another
  * application is required to be installed.
  *
@@ -2663,7 +2663,7 @@ as_app_set_update_contact (AsApp *app, const gchar *update_contact)
 					    replacements[i].search);
 			if (tmp != NULL) {
 				*tmp = replacements[i].replace;
-				g_strlcpy (tmp + 1,
+				(void)g_strlcpy (tmp + 1,
 					   tmp + strlen (replacements[i].search),
 					   len);
 				done_replacement = TRUE;
@@ -2839,7 +2839,7 @@ as_app_set_developer_name (AsApp *app,
  * @locale: (nullable): the locale. e.g. "en_GB"
  * @description: the application description.
  *
- * Sets the application descrption markup for a specific locale.
+ * Sets the application description markup for a specific locale.
  *
  * Since: 0.1.0
  **/
@@ -4831,7 +4831,7 @@ as_app_node_insert (AsApp *app, GNode *parent, AsNodeContext *ctx)
 
 	/* <custom> or <metadata> */
 	if (g_hash_table_size (priv->metadata) > 0) {
-		tmp = as_node_context_get_version (ctx) > 0.9 ? "custom" : "metadata";
+		tmp = as_utils_vercmp (as_node_context_get_version (ctx), "0.9") > 0 ? "custom" : "metadata";
 		node_tmp = as_node_insert (node_app, tmp, NULL, 0, NULL);
 		as_node_insert_hash (node_tmp, "value", "key", priv->metadata, FALSE);
 	}
@@ -4972,8 +4972,11 @@ as_app_node_parse_child (AsApp *app, GNode *n, guint32 flags,
 	/* <description> */
 	case AS_TAG_DESCRIPTION:
 	{
-		/* unwrap appdata inline */
+		/* unwrap appdata and metainfo inline */
 		AsFormat *format = as_app_get_format_by_kind (app, AS_FORMAT_KIND_APPDATA);
+		if (format == NULL)
+			format = as_app_get_format_by_kind (app, AS_FORMAT_KIND_METAINFO);
+
 		if (format != NULL) {
 			GError *error_local = NULL;
 			g_autoptr(GHashTable) unwrapped = NULL;
@@ -5154,15 +5157,19 @@ as_app_node_parse_child (AsApp *app, GNode *n, guint32 flags,
 			priv->problems |= AS_APP_PROBLEM_TRANSLATED_LICENSE;
 			break;
 		}
+		if (priv->project_license != NULL)
+			priv->problems |= AS_APP_PROBLEM_DUPLICATE_PROJECT_LICENSE;
 		as_ref_string_assign (&priv->project_license, as_node_get_data_as_refstr (n));
 		break;
 
-	/* <project_license> */
+	/* <metadata_license> */
 	case AS_TAG_METADATA_LICENSE:
 		if (as_node_get_attribute (n, "xml:lang") != NULL) {
 			priv->problems |= AS_APP_PROBLEM_TRANSLATED_LICENSE;
 			break;
 		}
+		if (priv->metadata_license != NULL)
+			priv->problems |= AS_APP_PROBLEM_DUPLICATE_METADATA_LICENSE;
 		as_app_set_metadata_license (app, as_node_get_data (n));
 		break;
 
@@ -5731,6 +5738,18 @@ as_app_node_parse_dep11 (AsApp *app, GNode *node,
 			}
 			continue;
 		}
+		if (g_strcmp0 (tmp, "Launchable") == 0) {
+			for (c = n->children; c != NULL; c = c->next) {
+				for (c2 = c->children; c2 != NULL; c2 = c2->next) {
+					g_autoptr(AsLaunchable) launchable = NULL;
+					launchable = as_launchable_new ();
+					as_launchable_set_kind (launchable, as_launchable_kind_from_string (as_yaml_node_get_key (c)));
+					as_launchable_set_value (launchable, as_yaml_node_get_key (c2));
+					as_app_add_launchable (app, launchable);
+				}
+			}
+			continue;
+		}
 		if (g_strcmp0 (tmp, "Screenshots") == 0) {
 			for (c = n->children; c != NULL; c = c->next) {
 				g_autoptr(AsScreenshot) ss = NULL;
@@ -5790,6 +5809,14 @@ as_app_node_parse_dep11 (AsApp *app, GNode *node,
 					continue;
 				}
 				as_app_add_compulsory_for_desktop (app, tmp);
+			}
+			continue;
+		}
+		if (g_strcmp0 (tmp, "Custom") == 0) {
+			for (c = n->children; c != NULL; c = c->next) {
+				as_app_add_metadata (app,
+						     as_yaml_node_get_key (c),
+						     as_yaml_node_get_value (c));
 			}
 			continue;
 		}
@@ -6439,7 +6466,7 @@ as_app_to_xml (AsApp *app, GError **error)
 {
 	g_autoptr(AsNodeContext) ctx = as_node_context_new ();
 	g_autoptr(AsNode) root = as_node_new ();
-	as_node_context_set_version (ctx, 1.0);
+	as_node_context_set_version (ctx, "1.0");
 	as_node_context_set_output (ctx, AS_FORMAT_KIND_APPDATA);
 	as_app_node_insert (app, root, ctx);
 	return as_node_to_xml (root,

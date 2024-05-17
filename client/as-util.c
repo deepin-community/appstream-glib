@@ -18,7 +18,7 @@
 #include <appstream-glib.h>
 #include <archive_entry.h>
 #include <archive.h>
-#include <libsoup/soup.h>
+#include <curl/curl.h>
 #include <locale.h>
 #include <stdlib.h>
 
@@ -38,6 +38,8 @@ typedef struct {
 	GMainLoop		*loop;
 	GCancellable		*cancellable;
 	AsProfile		*profile;
+	CURL			*curl;
+	GProxyResolver		*proxy_resolver;
 } AsUtilPrivate;
 
 typedef gboolean (*AsUtilPrivateCb)	(AsUtilPrivate	*util,
@@ -482,8 +484,7 @@ as_util_convert_appstream (GFile *file_input,
 	if (!as_store_from_file (store, file_input, NULL, NULL, error))
 		return FALSE;
 	/* TRANSLATORS: information message */
-	g_print ("%s: %.2f\n", _("Old API version"),
-		 as_store_get_api_version (store));
+	g_print (_("Old API version: %s\n"), as_store_get_version (store));
 
 	/* save file */
 	as_store_set_api_version (store, new_version);
@@ -494,7 +495,7 @@ as_util_convert_appstream (GFile *file_input,
 				NULL, error))
 		return FALSE;
 	/* TRANSLATORS: information message */
-	g_print ("%s: %.2f\n", _("New API version"), as_store_get_api_version (store));
+	g_print (_("New API version: %s\n"), as_store_get_version (store));
 	return TRUE;
 }
 
@@ -655,11 +656,11 @@ as_util_appdata_to_news (AsUtilPrivate *priv, gchar **values, GError **error)
 
 			rel = g_ptr_array_index (releases, i);
 
-			/* print version with underline */
+			/* print version with Markdown underline */
 			version = g_strdup_printf ("Version %s", as_release_get_version (rel));
 			g_string_append_printf (str, "%s\n", version);
 			for (j = 0; version[j] != '\0'; j++)
-				g_string_append (str, "~");
+				g_string_append (str, "=");
 			g_string_append (str, "\n");
 
 			/* print release */
@@ -3294,7 +3295,7 @@ as_util_mirror_screenshots_app_file (AsApp *app,
 	AsImageAlphaFlags alpha_flags;
 	guint i;
 	g_autofree gchar *basename = NULL;
-	g_autofree gchar *filename_no_path = NULL;
+	g_autofree gchar *filename_no_path = g_path_get_basename (filename);
 	g_autofree gchar *url_src = NULL;
 	g_autoptr(AsImage) im_src = NULL;
 	guint sizes[] = { AS_IMAGE_NORMAL_WIDTH,    AS_IMAGE_NORMAL_HEIGHT,
@@ -3309,15 +3310,12 @@ as_util_mirror_screenshots_app_file (AsApp *app,
 	/* is the aspect ratio of the source perfectly 16:9 */
 	if ((as_image_get_width (im_src) / 16) * 9 !=
 	     as_image_get_height (im_src)) {
-		filename_no_path = g_path_get_basename (filename);
-		g_debug ("%s is not in 16:9 aspect ratio",
-			 filename_no_path);
+		g_debug ("%s is not in 16:9 aspect ratio", filename_no_path);
 	}
 
 	/* check screenshot is reasonable in size */
 	if (as_image_get_width (im_src) * 2 < AS_IMAGE_NORMAL_WIDTH ||
 	    as_image_get_height (im_src) * 2 < AS_IMAGE_NORMAL_HEIGHT) {
-		filename_no_path = g_path_get_basename (filename);
 		g_set_error (error,
 			     AS_APP_ERROR,
 			     AS_APP_ERROR_FAILED,
@@ -3332,15 +3330,11 @@ as_util_mirror_screenshots_app_file (AsApp *app,
 	alpha_flags = as_image_get_alpha_flags (im_src);
 	if ((alpha_flags & AS_IMAGE_ALPHA_FLAG_TOP) > 0||
 	    (alpha_flags & AS_IMAGE_ALPHA_FLAG_BOTTOM) > 0) {
-		filename_no_path = g_path_get_basename (filename);
-		g_debug ("%s has vertical alpha padding",
-			 filename_no_path);
+		g_debug ("%s has vertical alpha padding", filename_no_path);
 	}
 	if ((alpha_flags & AS_IMAGE_ALPHA_FLAG_LEFT) > 0||
 	    (alpha_flags & AS_IMAGE_ALPHA_FLAG_RIGHT) > 0) {
-		filename_no_path = g_path_get_basename (filename);
-		g_debug ("%s has horizontal alpha padding",
-			 filename_no_path);
+		g_debug ("%s has horizontal alpha padding", filename_no_path);
 	}
 
 	/* include the app-id in the basename */
@@ -3378,6 +3372,15 @@ as_util_mirror_screenshots_app_file (AsApp *app,
 	return TRUE;
 }
 
+static size_t
+as_util_download_write_callback_cb(char *ptr, size_t size, size_t nmemb, void *userdata)
+{
+	GByteArray *buf = (GByteArray *)userdata;
+	gsize realsize = size * nmemb;
+	g_byte_array_append(buf, (const guint8 *)ptr, realsize);
+	return realsize;
+}
+
 static gboolean
 as_util_mirror_screenshots_app_url (AsUtilPrivate *priv,
 				    AsApp *app,
@@ -3387,16 +3390,15 @@ as_util_mirror_screenshots_app_url (AsUtilPrivate *priv,
 				    const gchar *output_dir,
 				    GError **error)
 {
+	CURLcode res;
 	gboolean is_default;
 	gboolean ret = TRUE;
-	SoupStatus status;
+	gchar errbuf[CURL_ERROR_SIZE] = {'\0'};
 	g_autofree gchar *basename = NULL;
 	g_autofree gchar *cache_filename = NULL;
 	g_autoptr(AsImage) im = NULL;
 	g_autoptr(AsScreenshot) ss = NULL;
-	g_autoptr(SoupMessage) msg = NULL;
-	g_autoptr(SoupSession) session = NULL;
-	g_autoptr(SoupURI) uri = NULL;
+	g_autoptr(GByteArray) buf = g_byte_array_new();
 
 	/* fonts screenshots are auto-generated */
 	if (as_app_get_kind (app) == AS_APP_KIND_FONT) {
@@ -3413,13 +3415,6 @@ as_util_mirror_screenshots_app_url (AsUtilPrivate *priv,
 		return TRUE;
 	}
 
-	/* set up networking */
-	session = soup_session_new_with_options (SOUP_SESSION_USER_AGENT, "appstream-util",
-						 SOUP_SESSION_TIMEOUT, 10,
-						 NULL);
-	soup_session_add_feature_by_type (session,
-					  SOUP_TYPE_PROXY_RESOLVER_DEFAULT);
-
 	/* download to cache if not already added */
 	basename = g_path_get_basename (url);
 	cache_filename = g_strdup_printf ("%s/%s-%s",
@@ -3431,6 +3426,9 @@ as_util_mirror_screenshots_app_url (AsUtilPrivate *priv,
 	} else if (priv->nonet) {
 		as_util_app_log (app, "Missing %s:%s", url, cache_filename);
 	} else {
+		g_auto(GStrv) proxies = NULL;
+		g_autoptr(GError) error_proxy = NULL;
+
 		if (g_str_has_prefix (url, "file:")) {
 			g_set_error (error,
 				     AS_ERROR,
@@ -3438,30 +3436,44 @@ as_util_mirror_screenshots_app_url (AsUtilPrivate *priv,
 				     "file:// URLs like %s are not supported", url);
 			return FALSE;
 		}
-		uri = soup_uri_new (url);
-		if (uri == NULL) {
-			g_set_error (error,
-				     AS_ERROR,
-				     AS_ERROR_FAILED,
-				     "Could not parse '%s' as a URL", url);
-			return FALSE;
-		}
-		msg = soup_message_new_from_uri (SOUP_METHOD_GET, uri);
 		as_util_app_log (app, "Downloading %s", url);
-		status = soup_session_send_message (session, msg);
-		if (status != SOUP_STATUS_OK) {
+
+		/* set proxy if required */
+		proxies = g_proxy_resolver_lookup(priv->proxy_resolver, url, NULL, &error_proxy);
+		if (proxies == NULL) {
+			g_warning("failed to lookup proxy for %s: %s", url, error_proxy->message);
+		} else if (g_strcmp0(proxies[0], "direct://") != 0) {
+			(void)curl_easy_setopt(priv->curl, CURLOPT_PROXY, proxies[0]);
+		}
+		(void)curl_easy_setopt(priv->curl, CURLOPT_URL, url);
+		(void)curl_easy_setopt(priv->curl, CURLOPT_ERRORBUFFER, errbuf);
+		(void)curl_easy_setopt(priv->curl, CURLOPT_FOLLOWLOCATION, 1);
+		(void)curl_easy_setopt(priv->curl,
+				       CURLOPT_WRITEFUNCTION,
+				       as_util_download_write_callback_cb);
+		(void)curl_easy_setopt(priv->curl, CURLOPT_WRITEDATA, buf);
+		res = curl_easy_perform(priv->curl);
+		if (res != CURLE_OK) {
+			if (errbuf[0] != '\0') {
+				g_set_error (error,
+					     AS_ERROR,
+					     AS_ERROR_FAILED,
+					     "Downloading %s failed: %s",
+					     url, errbuf);
+				return FALSE;
+			}
 			g_set_error (error,
 				     AS_ERROR,
 				     AS_ERROR_FAILED,
-				     "Downloading failed: %s",
-				     soup_status_get_phrase (status));
+				     "Downloading %s failed",
+				     url);
 			return FALSE;
 		}
 
 		/* save new file */
 		ret = g_file_set_contents (cache_filename,
-					   msg->response_body->data,
-					   (gssize) msg->response_body->length,
+					   (const gchar *) buf->data,
+					   (gssize) buf->len,
 					   error);
 		if (!ret)
 			return FALSE;
@@ -4445,6 +4457,12 @@ main (int argc, char *argv[])
 	priv = g_new0 (AsUtilPrivate, 1);
 	priv->profile = as_profile_new ();
 
+	/* networking */
+	priv->proxy_resolver = g_proxy_resolver_get_default();
+	priv->curl = curl_easy_init();
+	(void)curl_easy_setopt(priv->curl, CURLOPT_USERAGENT, "appstream-util");
+	(void)curl_easy_setopt(priv->curl, CURLOPT_CONNECTTIMEOUT, 10L);
+
 	/* do stuff on ctrl+c */
 	priv->loop = g_main_loop_new (NULL, FALSE);
 	priv->cancellable = g_cancellable_new ();
@@ -4721,7 +4739,7 @@ main (int argc, char *argv[])
 	/* set verbose? */
 	if (verbose) {
 		priv->verbose = TRUE;
-		g_setenv ("G_MESSAGES_DEBUG", "all", FALSE);
+		(void)g_setenv ("G_MESSAGES_DEBUG", "all", FALSE);
 	} else {
 		g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,
 				   as_util_ignore_cb, NULL);
@@ -4760,6 +4778,8 @@ out:
 	if (priv != NULL) {
 		if (priv->cmd_array != NULL)
 			g_ptr_array_unref (priv->cmd_array);
+		if (priv->curl != NULL)
+			curl_easy_cleanup (priv->curl);
 		g_object_unref (priv->profile);
 		g_object_unref (priv->cancellable);
 		g_main_loop_unref (priv->loop);

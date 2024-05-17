@@ -345,7 +345,6 @@ asb_test_context_func (void)
 	asb_context_set_api_version (ctx, 0.9);
 	asb_context_set_flags (ctx, ASB_CONTEXT_FLAG_NO_NETWORK |
 				    ASB_CONTEXT_FLAG_INCLUDE_FAILED |
-				    ASB_CONTEXT_FLAG_HIDPI_ICONS |
 				    ASB_CONTEXT_FLAG_ADD_DEFAULT_ICONS);
 	asb_context_set_basename (ctx, "appstream");
 	asb_context_set_origin (ctx, "asb-self-test");
@@ -472,8 +471,8 @@ asb_test_context_func (void)
 		"<name>App</name>\n"
 		"<summary>A test application</summary>\n"
 		"<description><p>Long description goes here.</p></description>\n"
-		"<icon type=\"cached\" height=\"128\" width=\"128\">app.png</icon>\n"
 		"<icon type=\"cached\" height=\"64\" width=\"64\">app.png</icon>\n"
+		"<icon type=\"cached\" height=\"128\" width=\"128\">app.png</icon>\n"
 		"<categories>\n"
 		"<category>Profiling</category>\n"
 		"<category>System</category>\n"
@@ -639,8 +638,8 @@ main (int argc, char **argv)
 
 	/* only critical and error are fatal */
 	g_log_set_fatal_mask (NULL, G_LOG_LEVEL_ERROR | G_LOG_LEVEL_CRITICAL);
-	g_setenv ("ASB_IS_SELF_TEST", "", TRUE);
-	g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
+	(void)g_setenv ("ASB_IS_SELF_TEST", "", TRUE);
+	(void)g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
 
 	/* tests go here */
 	g_test_add_func ("/AppStreamBuilder/package", asb_test_package_func);

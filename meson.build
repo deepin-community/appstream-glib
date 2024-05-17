@@ -1,9 +1,11 @@
 project('appstream-glib', 'c',
-  version : '0.7.18',
+  version : '0.8.2',
   license : 'LGPL-2.1+',
   default_options : ['warning_level=1', 'c_std=c99'],
-  meson_version : '>=0.37.0'
+  meson_version : '>=0.46.0'
 )
+
+cc = meson.get_compiler('c')
 
 as_version = meson.project_version()
 varr = as_version.split('.')
@@ -61,7 +63,7 @@ plugindir = join_paths(get_option('prefix'),
                        'asb-plugins-' + as_plugin_version)
 
 glib_ver = '>= 2.58.0'
-glib = dependency('glib-2.0', version : glib_ver)
+gio = dependency('gio-2.0', version : glib_ver)
 gmodule = dependency('gmodule-2.0', version : glib_ver)
 if platform_win32
   giowindows = dependency('gio-windows-2.0', version : glib_ver)
@@ -72,7 +74,7 @@ else
   uuid = dependency('uuid')
 endif
 libarchive = dependency('libarchive')
-soup = dependency('libsoup-2.4', version : '>= 2.51.92')
+libcurl = dependency('libcurl', version : '>= 7.56.0')
 json_glib = dependency('json-glib-1.0', version : '>= 1.1.2')
 gdkpixbuf = dependency('gdk-pixbuf-2.0', version : '>= 2.31.5')
 
@@ -105,7 +107,6 @@ endif
 
 # support stemming of search tokens
 if get_option('stemmer')
-  cc = meson.get_compiler('c')
   stemmer = cc.find_library('stemmer')
   conf.set('HAVE_LIBSTEMMER', 1)
 endif

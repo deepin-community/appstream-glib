@@ -26,7 +26,6 @@ typedef struct
 	GPtrArray	*requires_appdata;
 	AsbPackage	*pkg;
 	gboolean	 ignore_requires_appdata;
-	gboolean	 hidpi_enabled;
 } AsbAppPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE (AsbApp, asb_app, AS_TYPE_APP)
@@ -104,22 +103,6 @@ asb_app_set_package (AsbApp *app, AsbPackage *pkg)
 }
 
 /**
- * asb_app_set_hidpi_enabled:
- * @app: A #AsbApp
- * @hidpi_enabled: if HiDPI mode should be enabled
- *
- * Sets the HiDPI mode for the application.
- *
- * Since: 0.3.1
- **/
-void
-asb_app_set_hidpi_enabled (AsbApp *app, gboolean hidpi_enabled)
-{
-	AsbAppPrivate *priv = GET_PRIVATE (app);
-	priv->hidpi_enabled = hidpi_enabled;
-}
-
-/**
  * asb_app_save_resources:
  * @app: A #AsbApp
  * @save_flags: #AsbAppSaveFlags, e.g. %ASB_APP_SAVE_FLAG_SCREENSHOTS
@@ -145,6 +128,7 @@ asb_app_save_resources (AsbApp *app, AsbAppSaveFlags save_flags, GError **error)
 		icons = as_app_get_icons (AS_APP (app));
 	for (i = 0; icons != NULL && i < icons->len; i++) {
 		const gchar *tmpdir;
+		g_autofree gchar *dir = NULL;
 		g_autofree gchar *filename = NULL;
 		g_autofree gchar *size_str = NULL;
 		g_autoptr(GError) error_local = NULL;
@@ -165,7 +149,9 @@ asb_app_save_resources (AsbApp *app, AsbAppSaveFlags save_flags, GError **error)
 
 		/* save to disk */
 		tmpdir = asb_package_get_config (priv->pkg, "IconsDir");
-		filename = g_build_filename (tmpdir,
+		dir = g_strdup_printf ("%ix%i", as_icon_get_width (icon),
+				       as_icon_get_height (icon));
+		filename = g_build_filename (tmpdir, dir,
 					     as_icon_get_name (icon),
 					     NULL);
 		if (!gdk_pixbuf_save (pixbuf, filename, "png", error, NULL))
